@@ -1,6 +1,6 @@
-﻿
+
 local loaded = false
-local enableReb = false
+local enableReb = true
 local enableFarm = true
  
 success, err = pcall(function()
@@ -260,10 +260,9 @@ screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 local minStat = 120000000 -- Min stat for Bills Planet
 
 local LocalPlayerName;
-local autoFarmLoopRunning = false
+local autoFarmLoopRunning = true
 local isFlying = false
 local isCharging = false
-local isFormStackNeeded = true
 local isPlayerDead = false
 local isRebirthed = false
 
@@ -954,12 +953,9 @@ local function teleportToBillsPlanet()
 
     if currentLowestStat >= 120000000 and game.placeId ~= 5151400895 then
         LocalPlayerData = game.ReplicatedStorage.Datas[game.Players.LocalPlayer.UserId]
-        if LocalPlayerData.Zeni.Value >= 15000 then
-
-            local A_1 = "Vills Planet"
-            local Event = game:GetService("ReplicatedStorage").Package.Events.TP
-            Event:InvokeServer(A_1)
-        end
+        local A_1 = "Vills Planet"
+        local Event = game:GetService("ReplicatedStorage").Package.Events.TP
+        Event:InvokeServer(A_1)
     end
 
     if currentLowestStat < 120000000 and game.placeId == 5151400895 then
@@ -977,12 +973,11 @@ local function DeadChecker()
         task.wait()
         if game.Players.LocalPlayer.Character.Humanoid.Health <= 0 then
             isPlayerDead = true
-            isFormStackNeeded = true
             autoFarmLoopRunning = false
             isFlying = false
             isCharging = false
         elseif game.Players.LocalPlayer.Character.Humanoid.Health > 0 then
-            --autoFarmLoopRunning = true
+            autoFarmLoopRunning = true
             isPlayerDead = false
             
         end
@@ -1016,38 +1011,6 @@ function startTheGame()
     end)
 
 end
-
-local function formStack()
-    local success, err = pcall(function ()
-        LocalPlayerName = game.Players.LocalPlayer.name
-        LocalPlayerData = game.ReplicatedStorage.Datas[game.Players.LocalPlayer.UserId]
-        if LocalPlayerData.Energy.Value > 8000000 and isPlayerDead == false then
-            task.wait()
-            repeat task.wait() until game.workspace.Living:FindFirstChild(LocalPlayerName)
-            game.workspace.Living[LocalPlayerName]:FindFirstChild("UpperTorso"):Destroy()
-            task.wait(5)
-            local Remote = game.ReplicatedStorage.Package.Events['equipskill']
-            local Arguments = {
-                [1] = "Godly SSJ2"
-            }
-            Remote:InvokeServer(unpack(Arguments))
-            local Remote = game.ReplicatedStorage.Package.Events['ta']
-            i = 0
-            repeat
-                Remote:InvokeServer(unpack(Arguments))
-                i = i + 1
-                task.wait(.1)
-            until i == 8
-        end
-        isFlying = false
-        isFormStackNeeded = false
-    end)
-    if not success then
-        warn(err)
-    end
-end
-
-teleportToBillsPlanet()
 repeat
     startTheGame()
 until game.workspace.Living[LocalPlayerName]
@@ -1077,7 +1040,7 @@ end
 local function Transform()
     LocalPlayerData = game.ReplicatedStorage.Datas[game.Players.LocalPlayer.UserId]
     local formName;
-    if not isFormStackNeeded and game.Workspace.Living[LocalPlayerName].Stats.Ki.Value > 300 then
+    if game.Workspace.Living[LocalPlayerName].Stats.Ki.Value > 300 then
         local currentLowestStat = getCheckValue()
         local Alignment = LocalPlayerData.Allignment.Value
         local forms = FormsList[Alignment]
@@ -1109,35 +1072,14 @@ local function Transform()
                 game.Players.LocalPlayer.Status.Transformation.Value then
                 game:GetService("ReplicatedStorage").Package.Events.ta:InvokeServer()							
             end
-        until game.Players.LocalPlayer.Status.SelectedTransformation.Value ==
-            game.Players.LocalPlayer.Status.Transformation.Value or
-            game.Workspace.Living[LocalPlayerName].Stats.Ki.Value < 300
+        until game.Players.LocalPlayer.Status.Transformation.Value ~= nil or
+            game.Workspace.Living:WaitForChild(LocalPlayerName).Stats.Ki.Value < 300
     end
 end
 -- Function
 local attacksToStack = {"Super Dragon Fist", "God Slicer", "Spirit Barrage", "Mach Kick", "Wolf Fang Fist", "High Power Rush",
                   "Meteor Strike", "Meteor Charge", "Vital Strike", "Uppercut", "Spirit Breaking Cannon", "Vanish Strike"}
 
---AutoRebirth
-task.spawn(function()
-    while true and task.wait() do
-        pcall(function()
-            if enableReb then
-                LocalPlayerData = game.ReplicatedStorage.Datas[game.Players.LocalPlayer.UserId]
-                game:GetService("ReplicatedStorage").Package.Events.reb:InvokeServer() -- reb
-                RebValue = LocalPlayerData.Rebirth.Value
-                if rebirthOnJoin ~= RebValue then
-                    local A_1 = "Earth"
-                    local Event = game:GetService("ReplicatedStorage").Package.Events.TP
-
-                    Event:InvokeServer(A_1)
-
-                    task.wait()
-                end
-            end
-        end)
-    end
-end)
 --AutoBlocking
 task.spawn(function()
     while true and task.wait() do
@@ -1159,6 +1101,18 @@ pcall(function()
 	end)
 end)
 
+--AutoRebirth
+task.spawn(function()
+    while true do
+        pcall(function()
+            if enableReb then
+                game:GetService("ReplicatedStorage").Package.Events.reb:InvokeServer() -- reb
+            end
+        end)
+        task.wait(1)
+    end
+end)
+
 -- Main LOOP
 local selectedQuest, selectedOpponent;
 while true do
@@ -1166,20 +1120,12 @@ while true do
         task.wait()
         DeadChecker()
     until not isPlayerDead and enableFarm
-    local success1, err1 = pcall(function()
-        if isFormStackNeeded == true then
-            formStack()
-            autoFarmLoopRunning = true        
-        end
-    end)
     if not success1 then
         warn(err1)
     end
 
-    if isRebirthed == true and game.placeId == 5151400895 then
-        task.wait()
-        teleportToBillsPlanet()
-    end
+    teleportToBillsPlanet()
+
     repeat task.wait()
     until game.Workspace.Living:FindFirstChild(LocalPlayerName) and
     game.Workspace.Living[LocalPlayerName]:FindFirstChild("HumanoidRootPart")
@@ -1218,14 +1164,12 @@ while true do
             bv.MaxForce = Vector3.new(100000, 100000, 100000)
             isFlying = true
         end)
-        print("Flying")
     end
     
 	--Auto Farm Algorithm
     if not isPlayerDead and autoFarmLoopRunning then
         success, err = pcall(function()
             task.wait()
-            teleportToBillsPlanet()
 			local currentLowestStat = getCheckValue();
 			local gotQuest = string.len(game:GetService("ReplicatedStorage").Datas[game.Players.LocalPlayer.UserId].Quest.Value) > 0
             if not gotQuest then
@@ -1242,7 +1186,6 @@ while true do
 						game.ReplicatedStorage.Package.Events.Qaction:InvokeServer(game:GetService("Workspace").Others.NPCs[selectedQuest])
 
 					until game:GetService("ReplicatedStorage").Datas[game.Players.LocalPlayer.UserId].Quest.Value == selectedQuest or game.Players.LocalPlayer.Character.Humanoid.Health <= 0
-					--LivingOpponent = game.workspace.Living:FindFirstChild(selectedOpponent)
 				end
 			end
             local LivingOpponent = game.workspace.Living:FindFirstChild(selectedOpponent)
@@ -1269,7 +1212,6 @@ while true do
                             local A_2 = "Blacknwhite27"
                             local repeats = 0
                             repeat
-                                --task.spawn(function()
                                     for _, A_1 in ipairs(attacksToStack) do
                                         task.spawn(function()
                                             task.wait()
@@ -1277,7 +1219,6 @@ while true do
                                         end)
                                     end
                                     wait()
-                                --end) 
                                 repeats = repeats + 1
                             until repeats == 10 or game.Players.LocalPlayer.Character.Humanoid.Health <= 0
                             or LivingOpponent.Humanoid.Health <= 0
@@ -1286,7 +1227,6 @@ while true do
                         game.Players.LocalPlayer.Character.Humanoid.Health <= 0 or
                         game.Workspace.Living[LocalPlayerName].Stats.Ki.Value < 10000
                     else
-                        print("Cant be")
                         task.spawn(function()
                             repeat
                                 game:GetService("ReplicatedStorage").Package.Events.p:FireServer("Blacknwhite27", 1)
@@ -1336,7 +1276,6 @@ while true do
                             game.Players.LocalPlayer.Character.Humanoid.Health <= 0 or
                             game.Workspace.Living[LocalPlayerName].Stats.Ki.Value > 10000 and
                             currentLowestStat > 2100000
-
                     end
                 until not autoFarmLoopRunning or LivingOpponent.Humanoid.Health <= 0 or
                     game.Players.LocalPlayer.Character.Humanoid.Health <= 0
@@ -1344,5 +1283,8 @@ while true do
             end
 			task.wait()
         end)
+        if not success then
+            print(err)
+        end
     end
 end
