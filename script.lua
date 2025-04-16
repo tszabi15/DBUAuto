@@ -1,6 +1,6 @@
 
 local loaded = false
-local enableReb = true
+local enableReb = false
 local enableFarm = true
  
 success, err = pcall(function()
@@ -648,9 +648,15 @@ local FormsList = {
     }, {
 		Name = "Astral Instinct",
 		requiredValue = 140000001,
-		endRange = 12000000000000000000000000000000000,
+		endRange = 500000000,
 		Alignment = "Neutral",
 		rebirthReq = 26
+	}, {
+		Name = "Ego Instinct",
+		requiredValue = 500000001,
+		endRange = 1200000000000000000000000,
+		Alignment = "Neutral",
+		rebirthReq = 50
 	}},
 
     Good = {{
@@ -797,6 +803,12 @@ local FormsList = {
 		endRange = 12000000000000000000000000000000000,
 		Alignment = "Neutral",
 		rebirthReq = 26
+	}, {
+		Name = "Ego Instinct",
+		requiredValue = 500000001,
+		endRange = 1200000000000000000000000,
+		Alignment = "Neutral",
+		rebirthReq = 50
 	}}
 }
 
@@ -952,15 +964,16 @@ local function teleportToBillsPlanet()
     local currentLowestStat = getCheckValue()
 
     if currentLowestStat >= 120000000 and game.placeId ~= 5151400895 then
-        LocalPlayerData = game.ReplicatedStorage.Datas[game.Players.LocalPlayer.UserId]
         local A_1 = "Vills Planet"
         local Event = game:GetService("ReplicatedStorage").Package.Events.TP
+        task.wait(0.1)
         Event:InvokeServer(A_1)
     end
 
     if currentLowestStat < 120000000 and game.placeId == 5151400895 then
             local A_1 = "Earth"
             local Event = game:GetService("ReplicatedStorage").Package.Events.TP
+            task.wait(0.1)
             Event:InvokeServer(A_1)
     end
 end
@@ -1011,9 +1024,8 @@ function startTheGame()
     end)
 
 end
-repeat
-    startTheGame()
-until game.workspace.Living[LocalPlayerName]
+
+startTheGame()
 
 local bb = game:service 'VirtualUser'
 game.Players.LocalPlayer.Idled:Connect(function()
@@ -1067,7 +1079,7 @@ local function Transform()
         local formEquipRemoteEvent = game:GetService("ReplicatedStorage").Package.Events.equipskill
         formEquipRemoteEvent:InvokeServer(formName)
         repeat
-            task.wait()
+            task.wait(0.1)
             if game.Players.LocalPlayer.Status.SelectedTransformation.Value ~=
                 game.Players.LocalPlayer.Status.Transformation.Value then
                 game:GetService("ReplicatedStorage").Package.Events.ta:InvokeServer()							
